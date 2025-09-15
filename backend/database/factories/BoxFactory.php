@@ -31,3 +31,4 @@ class BoxFactory extends Factory
         ];
     }
 }
+

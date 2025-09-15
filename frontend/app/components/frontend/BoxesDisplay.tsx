@@ -8,6 +8,7 @@ interface Box {
   height: number;
   width: number;
   count: number;
+  colour?: string;
 }
 
 interface GeneratedBox extends Omit<Box, 'id'> {
@@ -19,12 +20,9 @@ const BoxesDisplay: React.FC = () => {
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [colorOrder, setColorOrder] = useState<string[]>([]);
-  const [isSorted, setIsSorted] = useState(false);
-  const [boxOrder, setBoxOrder] = useState<number[]>([]);
-
-  // Define available colors
-  const colors = ['blue', 'green', 'red', 'pink', 'grey', 'yellow'];
+  const [isSorted, setIsSorted] = useState(true);
+  const [shuffledBoxes, setShuffledBoxes] = useState<GeneratedBox[]>([]);
+  const [colorsShuffled, setColorsShuffled] = useState(false);
 
   useEffect(() => {
     const fetchBoxes = async () => {
@@ -33,13 +31,6 @@ const BoxesDisplay: React.FC = () => {
         const response = await api.get<Box[]>('/boxes');
         setBoxes(response.data);
         setError(null);
-        // Initialize color order
-        setColorOrder([...colors]);
-        // Initialize box order (shuffled)
-        const totalBoxes = response.data.reduce((sum, box) => sum + box.count, 0);
-        const shuffledOrder = Array.from({ length: totalBoxes }, (_, i) => i + 1)
-          .sort(() => Math.random() - 0.5);
-        setBoxOrder(shuffledOrder);
       } catch (err) {
         console.error('Error fetching boxes:', err);
         setError('Failed to fetch boxes data');
@@ -51,21 +42,40 @@ const BoxesDisplay: React.FC = () => {
     fetchBoxes();
   }, []);
 
-  // Shuffle colors function
+  // Initialize shuffled boxes when boxes data changes
+  useEffect(() => {
+    if (boxes.length > 0) {
+      const allBoxes: GeneratedBox[] = [];
+      
+      // Create one box per database row
+      boxes.forEach((boxData: Box, index: number) => {
+        const generatedBox: GeneratedBox = {
+          height: boxData.height,
+          width: boxData.width,
+          count: boxData.count,
+          colour: boxData.colour,
+          id: `${boxData.id}`,
+          iteration: index + 1
+        };
+        allBoxes.push(generatedBox);
+      });
+      
+      const shuffled = [...allBoxes].sort(() => Math.random() - 0.5);
+      setShuffledBoxes(shuffled);
+    }
+  }, [boxes]);
+
+  // Shuffle colors function - shuffles the API colors
   const shuffleColors = () => {
-    const shuffled = [...colors].sort(() => Math.random() - 0.5);
-    setColorOrder(shuffled);
-    setIsSorted(false);
+    setColorsShuffled(!colorsShuffled);
   };
 
   // Sort boxes function
   const sortBoxes = () => {
     if (isSorted) {
       // If currently sorted, shuffle the boxes
-      const totalBoxes = generatedBoxes.length;
-      const shuffledOrder = Array.from({ length: totalBoxes }, (_, i) => i + 1)
-        .sort(() => Math.random() - 0.5);
-      setBoxOrder(shuffledOrder);
+      const shuffled = [...generatedBoxes].sort(() => Math.random() - 0.5);
+      setShuffledBoxes(shuffled);
     }
     setIsSorted(!isSorted);
   };
@@ -90,22 +100,21 @@ const BoxesDisplay: React.FC = () => {
     );
   }
 
-  // Generate boxes based on count value
+  // Generate boxes based on database rows (one box per row)
   const generateBoxes = (): GeneratedBox[] => {
     const allBoxes: GeneratedBox[] = [];
     
-    boxes.forEach((boxData: Box) => {
-      // Loop until we reach the count value
-      for (let i = 0; i < boxData.count; i++) {
-        const generatedBox: GeneratedBox = {
-          height: boxData.height,
-          width: boxData.width,
-          count: boxData.count,
-          id: `${boxData.id}-${i + 1}`, // Unique ID for each generated box
-          iteration: i + 1
-        };
-        allBoxes.push(generatedBox);
-      }
+    // Create one box per database row
+    boxes.forEach((boxData: Box, index: number) => {
+      const generatedBox: GeneratedBox = {
+        height: boxData.height,
+        width: boxData.width,
+        count: boxData.count,
+        colour: boxData.colour,
+        id: `${boxData.id}`,
+        iteration: index + 1
+      };
+      allBoxes.push(generatedBox);
     });
     
     return allBoxes;
@@ -113,32 +122,33 @@ const BoxesDisplay: React.FC = () => {
 
   const generatedBoxes = generateBoxes();
 
-  // Get color for each box based on color order
-  const getBoxColor = (index: number) => {
-    const colorIndex = index % colorOrder.length;
-    const color = colorOrder[colorIndex];
+  // Get color for each box - use shuffled API colors
+  const getBoxColor = (box: GeneratedBox, index: number) => {
+    if (colorsShuffled) {
+      // When colors are shuffled, get all API colors and shuffle them
+      const allApiColors = generatedBoxes.map(b => b.colour).filter(Boolean);
+      const shuffledApiColors = [...allApiColors].sort(() => Math.random() - 0.5);
+      const colorIndex = index % shuffledApiColors.length;
+      const shuffledColor = shuffledApiColors[colorIndex];
+      
+      if (shuffledColor) {
+        return { backgroundColor: shuffledColor };
+      }
+    }
     
-    // Return color styles for each color
-    const colorStyles = {
-      blue: { borderColor: '#3b82f6', backgroundColor: '#dbeafe' },
-      green: { borderColor: '#10b981', backgroundColor: '#d1fae5' },
-      red: { borderColor: '#ef4444', backgroundColor: '#fee2e2' },
-      pink: { borderColor: '#ec4899', backgroundColor: '#fce7f3' },
-      grey: { borderColor: '#6b7280', backgroundColor: '#f3f4f6' },
-      yellow: { borderColor: '#eab308', backgroundColor: '#fef3c7' }
-    };
+    // Use original API colour when not shuffled
+    if (box.colour) {
+      return { backgroundColor: box.colour };
+    }
     
-    return colorStyles[color as keyof typeof colorStyles] || colorStyles.blue;
+    // Default color if no API colour provided
+    return { backgroundColor: '#e5e7eb' }; // Light grey as fallback
   };
 
   // Sort boxes if needed
   const displayBoxes = isSorted 
     ? [...generatedBoxes].sort((a, b) => a.iteration - b.iteration)
-    : generatedBoxes.sort((a, b) => {
-        const aIndex = boxOrder.indexOf(a.iteration);
-        const bIndex = boxOrder.indexOf(b.iteration);
-        return aIndex - bIndex;
-      });
+    : shuffledBoxes;
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -147,9 +157,9 @@ const BoxesDisplay: React.FC = () => {
         <Button 
           type="primary" 
           onClick={shuffleColors}
-          className="bg-blue-500 hover:bg-blue-600"
+          className={colorsShuffled ? "bg-purple-500 hover:bg-purple-600" : "bg-blue-500 hover:bg-blue-600"}
         >
-          Shuffle Colours
+          {colorsShuffled ? "Use API Colors" : "Shuffle Colours"}
         </Button>
         <Button 
           type="default" 
@@ -163,21 +173,20 @@ const BoxesDisplay: React.FC = () => {
       {/* Boxes Display */}
       <div className="flex flex-col items-center gap-4">
         {displayBoxes.map((box, index) => {
-          const colorStyle = getBoxColor(index);
+          const colorStyle = getBoxColor(box, index);
           return (
             <div
               key={box.id}
-              className="border-2 mb-1"
+              className="mb-1 flex items-center justify-center text-white font-bold"
               style={{
                 height: `${box.height}px`, // Use actual height from API
                 width: `${box.width}px`,   // Use actual width from API
                 minHeight: '40px', // Ensure minimum visibility
                 minWidth: '40px',
-                borderColor: colorStyle.borderColor,
                 backgroundColor: colorStyle.backgroundColor
               }}
             >
-                {box.id}
+                {box.iteration}
             </div>
           );
         })}

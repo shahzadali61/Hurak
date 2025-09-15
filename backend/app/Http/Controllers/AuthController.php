@@ -113,10 +113,5 @@ public function logout(Request $request)
     return response()->json($response, $response['code']);
 }
 
-public function get_users()
-    {
-        // Sare users ka data JSON mein return hoga
-        return response()->json(User::all());
-    }
 
 }

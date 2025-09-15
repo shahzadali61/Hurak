@@ -9,5 +9,5 @@ class Box extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['height', 'width', 'count'];
+    protected $fillable = ['height', 'width', 'count', 'colour'];
 }

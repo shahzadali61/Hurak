@@ -16,6 +16,7 @@ return new class extends Migration
             $table->integer('height');
             $table->integer('width');
             $table->integer('count');
+            $table->string('colour', 20)-> nullable();
             $table->timestamps();
         });
     }

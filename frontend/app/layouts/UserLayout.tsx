@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
-import Header from '../components/frontend/Header';
-import Footer from '../components/frontend/Footer';
+// import Header from '../components/frontend/Header';
+// import Footer from '../components/frontend/Footer';
 
 
 interface UserLayoutProps {
@@ -10,11 +10,11 @@ interface UserLayoutProps {
 const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
   return (
     <>
-      <Header />
+      {/* <Header /> */}
       <main className="pt-20">
         {children}
       </main>
-      <Footer />
+      {/* <Footer /> */}
     </>
   );
 };

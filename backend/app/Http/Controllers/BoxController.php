@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 
 class BoxController extends Controller
 {
-    public function Box()
+    public function box()
     {
         // Sare users ka data JSON mein return hoga
         return response()->json(Box::all());
