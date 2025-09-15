@@ -1,0 +1,39 @@
+section {
+    overflow-x: hidden;
+    /* padding: 40px 0 !important; */
+}
+
+img {
+    width: 100%;
+}
+body{
+    background-color: rgb(249, 250, 251) !important;
+}
+
+.ant-form-item-label > label {
+    height: 0px !important;
+}   
+.ant-skeleton.ant-skeleton-element .ant-skeleton-image .ant-skeleton-image-svg {
+    width: 150px;
+    height: 150px;
+
+}
+.ant-skeleton.ant-skeleton-element .ant-skeleton-image {
+    width: 100%;
+    height: inherit;
+}
+
+.ant-skeleton.ant-skeleton-element {
+  width: 100%;
+}
+
+/* Responsive Fix */
+@media only screen and (max-width: 576px) {
+    /* section {
+        padding: 30px 0px !important;
+    } */
+    .product-card .ant-card-body {
+        padding: 10px !important;
+    }
+
+}
