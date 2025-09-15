@@ -10,7 +10,6 @@ interface Box {
   count: number;
   colour?: string;
 }
-
 interface GeneratedBox extends Omit<Box, 'id'> {
   id: string;
   iteration: number;
